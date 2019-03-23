@@ -1,21 +1,17 @@
-<head>
-	<meta charset='utf-8'>
-	<link rel="stylesheet" media="all" href="demo.css" />
-        <link rel="stylesheet" media="all" href="json.human.css" />
-</head>
-<script src="json.human.js"></script>
- 
+<script type="text/javascript" src="json-viewer.js"></script>
+<link rel="stylesheet" type="text/css" href="/json-viewer.css">
+
 <div id="output"></div>
 
 <script>
+
     var output = document.getElementById("output");
-    var somePackage = {};
-    somePackage.connect = function()  {
+    var wsClient = {};
+    wsClient.connect = function()  {
         var ws = new WebSocket('ws://100.109.0.10:8000/');
         ws.onopen = function() {
             console.log('ws connected');
-            somePackage.ws = ws;
-            somePackage.send('hello!');
+	    ws.send(window.JSON.stringify('connect'));
         };
         ws.onerror = function() {
             console.log('ws error');
@@ -32,14 +28,6 @@
         };
     };
 
-    somePackage.send = function(msg) {
-        if (!this.ws) {
-            console.log('no connection');
-            return;
-        }
-        console.log('out:', msg)
-        this.ws.send(window.JSON.stringify(msg));
-    };
 
     function onNotificationReceived(notification){
     	var display = {};
@@ -52,11 +40,16 @@
 		display.power_state = instance_payload.power_state;
 		display.task_sate = instance_payload.task_state;
 		display.host = instance_payload.host;
-	}
-	
-        var node = JsonHuman.format(display);
-        output.appendChild(node);
+		display.full_payload = notification.payload;
+ 	}
+	display.full_payload = notification.payload;
+
+	var jsonViewer = new JSONViewer();
+	var container = jsonViewer.getContainer();
+	output.appendChild(container);
+	jsonViewer.showJSON(display, null, 1);
     }
 
-    somePackage.connect();
+    wsClient.connect();
+
 </script>
