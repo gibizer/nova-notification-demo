@@ -1,0 +1,62 @@
+<head>
+	<meta charset='utf-8'>
+	<link rel="stylesheet" media="all" href="demo.css" />
+        <link rel="stylesheet" media="all" href="json.human.css" />
+</head>
+<script src="json.human.js"></script>
+ 
+<div id="output"></div>
+
+<script>
+    var output = document.getElementById("output");
+    var somePackage = {};
+    somePackage.connect = function()  {
+        var ws = new WebSocket('ws://100.109.0.10:8000/');
+        ws.onopen = function() {
+            console.log('ws connected');
+            somePackage.ws = ws;
+            somePackage.send('hello!');
+        };
+        ws.onerror = function() {
+            console.log('ws error');
+        };
+        ws.onclose = function() {
+            console.log('ws closed');
+        };
+        ws.onmessage = function(msgevent) {
+	    console.log('received');
+            var notification = JSON.parse(msgevent.data);
+            console.log(notification);
+	    onNotificationReceived(notification);
+	    
+        };
+    };
+
+    somePackage.send = function(msg) {
+        if (!this.ws) {
+            console.log('no connection');
+            return;
+        }
+        console.log('out:', msg)
+        this.ws.send(window.JSON.stringify(msg));
+    };
+
+    function onNotificationReceived(notification){
+    	var display = {};
+	var instance_payload = notification.payload['nova_object.data'];
+	display.event_type = notification.event_type;
+	if (! display.event_type.includes('scheduler'))
+	{
+		display.name = instance_payload.display_name;
+		display.state = instance_payload.state;
+		display.power_state = instance_payload.power_state;
+		display.task_sate = instance_payload.task_state;
+		display.host = instance_payload.host;
+	}
+	
+        var node = JsonHuman.format(display);
+        output.appendChild(node);
+    }
+
+    somePackage.connect();
+</script>
