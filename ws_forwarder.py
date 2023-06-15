@@ -31,7 +31,7 @@ class NotificationForwarder(object):
         LOG.info('httpd started')
     
     def on_connect(self, *args, **kwargs):
-        LOG.info('ws client connected')
+        LOG.info('ws client connected %s, %s', args, kwargs)
         ws = WsServer(*args, **kwargs)
         self.endpoint.client = ws
         return ws
@@ -46,7 +46,7 @@ class NotificationForwarder(object):
         cfg.CONF()
 
         transport = oslo_messaging.get_notification_transport(
-            cfg.CONF, url='rabbit://stackrabbit:admin@100.109.0.10:5672/')
+            cfg.CONF, url='rabbit://stackrabbit:admin@127.0.0.1:5672/')
 
         targets = [
             oslo_messaging.Target(topic='versioned_notifications'),
@@ -86,11 +86,15 @@ class NotificationEndpoint(object):
                  (publisher_id, event_type))
         if self.client:
             LOG.info('forwarding to ' + str(self.client.address))
-            self.client.send_message(
-                json.dumps({
-                    "payload": payload,
-                    "publisher_id": publisher_id,
-                    "event_type": event_type}))
+            #self.client.send_message(
+            #    json.dumps({
+            #        "payload": payload,
+            #        "publisher_id": publisher_id,
+            #        "event_type": event_type}))
+            if event_type.startswith("instance."):
+                self.client.send_message("%s:%s" % (payload["nova_object.data"]["uuid"], event_type))
+
+
 
 
 if __name__ == '__main__':

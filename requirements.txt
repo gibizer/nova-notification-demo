@@ -1,2 +1,3 @@
 oslo.messaging
 simple-websocket-server
+websocket-client
